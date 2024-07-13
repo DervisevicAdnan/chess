@@ -99,6 +99,49 @@ class Board:
                     self.board[board_row][board_col] = Pawn(color.WHITE)
                 board_col += 1
 
+    def encode_FEN(self):
+        fen_notation=""
+        for row in self.board:
+            empty_field_counter = 0
+            for square in row:
+                if isinstance(square, EmptyField):
+                    empty_field_counter += 1
+                else:
+                    if empty_field_counter > 0:
+                        fen_notation += str(empty_field_counter)
+                        empty_field_counter = 0
+                    if square.color == 1:
+                        if isinstance(square, Pawn):
+                            fen_notation += 'P'
+                        elif isinstance(square, Rook):
+                            fen_notation += 'R'
+                        elif isinstance(square, Knight):
+                            fen_notation += 'K'
+                        elif isinstance(square, Bishop):
+                            fen_notation += 'B'
+                        elif isinstance(square, King):
+                            fen_notation += 'K'
+                        elif isinstance(square, Queen):
+                            fen_notation += 'Q'
+                    else:
+                        if isinstance(square, Pawn):
+                            fen_notation += 'p'
+                        elif isinstance(square, Rook):
+                            fen_notation += 'r'
+                        elif isinstance(square, Knight):
+                            fen_notation += 'k'
+                        elif isinstance(square, Bishop):
+                            fen_notation += 'b'
+                        elif isinstance(square, King):
+                            fen_notation += 'k'
+                        elif isinstance(square, Queen):
+                            fen_notation += 'q'
+            if empty_field_counter > 0:
+                    fen_notation += str(empty_field_counter)
+                    empty_field_counter = 0
+            fen_notation += '/'
+        return fen_notation
+
 class Field:
     def __init__(self) -> None:
         pass
@@ -159,10 +202,12 @@ class Pawn(Figure):
 
     def to_string(self):
         return ("w" if self.color == color.WHITE else "b") + "P"
-    
+
 b = Board()
 b.print()
-print("/////////////")
 
-b.set_position("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1")
-b.print()
+print('\n')
+
+print(b.encode_FEN())
+
+print('\n')
