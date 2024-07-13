@@ -1,5 +1,16 @@
 from enum import Enum
 
+notation_decode = {
+    "a": 0,
+    "b": 1,
+    "c": 2,
+    "d": 3,
+    "e": 4,
+    "f": 5,
+    "g": 6,
+    "h": 7,
+}
+
 class color(Enum):
     WHITE = 1
     BLACK = 2
@@ -22,22 +33,20 @@ class Board:
     '''
 
     def __init__(self):
-        self.set_starting_order()
-        for i in range(8):
-            row = []
-            for j in range(8):
-                row.append(Field)
-            self.board.append(row)
+        starting_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        self.board = []
+        self.set_position(starting_FEN)
+        # Nije mi jasno bilo za sta je ovo
+        # for i in range(8):
+        #     row = []
+        #     for j in range(8):
+        #         row.append(Field)
+        #     self.board.append(row)
 
-    def set_starting_order(self):
-        self.board = [[Rook(color.BLACK),Knight(color.BLACK),Bishop(color.BLACK),Queen(color.BLACK),King(color.BLACK),Bishop(color.BLACK),Knight(color.BLACK),Rook(color.BLACK)],
-                      [Pawn(color.BLACK), Pawn(color.BLACK), Pawn(color.BLACK), Pawn(color.BLACK), Pawn(color.BLACK), Pawn(color.BLACK), Pawn(color.BLACK), Pawn(color.BLACK)],
-                      [EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField()],
-                      [EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField()],
-                      [EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField()],
-                      [EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField(), EmptyField()],
-                      [Pawn(color.WHITE), Pawn(color.WHITE), Pawn(color.WHITE), Pawn(color.WHITE), Pawn(color.WHITE), Pawn(color.WHITE), Pawn(color.WHITE), Pawn(color.WHITE)],
-                      [Rook(color.WHITE),Knight(color.WHITE),Bishop(color.WHITE),Queen(color.WHITE),King(color.WHITE),Bishop(color.WHITE),Knight(color.WHITE),Rook(color.WHITE)]]
+    def set_position(self, fen_notation):
+        self.board = [[EmptyField() for _ in range(8)] for _ in range(8)]
+        self.decode_FEN(fen_notation)
+
     def print(self):
         row_notation = "   "
         for i in range(8):
@@ -52,6 +61,43 @@ class Board:
             print(row)
             print(row_line)
 
+    def decode_FEN(self, fen_notation):
+        board_row = 0
+        board_col = 0
+        for character in fen_notation:
+            if character == '/':
+                board_row += 1
+                board_col = 0
+            elif character.isdigit():
+                for _ in range(int(character)):
+                    self.board[board_row][board_col] = EmptyField()
+                    board_col += 1
+            else:
+                if character == 'p':
+                    self.board[board_row][board_col] = Pawn(color.BLACK)
+                elif character == 'r':
+                    self.board[board_row][board_col] = Rook(color.BLACK)
+                elif character == 'n': 
+                    self.board[board_row][board_col] = Knight(color.BLACK)
+                elif character == 'b':
+                    self.board[board_row][board_col] = Bishop(color.BLACK)
+                elif character == 'q':
+                    self.board[board_row][board_col] = Queen(color.BLACK)
+                elif character == 'k':
+                    self.board[board_row][board_col] = King(color.BLACK)
+                elif character == 'R':
+                    self.board[board_row][board_col] = Rook(color.WHITE)
+                elif character == 'N': 
+                    self.board[board_row][board_col] = Knight(color.WHITE)
+                elif character == 'B':
+                    self.board[board_row][board_col] = Bishop(color.WHITE)
+                elif character == 'Q':
+                    self.board[board_row][board_col] = Queen(color.WHITE)
+                elif character == 'K':
+                    self.board[board_row][board_col] = King(color.WHITE)
+                elif character == 'P':
+                    self.board[board_row][board_col] = Pawn(color.WHITE)
+                board_col += 1
 
 class Field:
     def __init__(self) -> None:
@@ -114,6 +160,9 @@ class Pawn(Figure):
     def to_string(self):
         return ("w" if self.color == color.WHITE else "b") + "P"
     
-
 b = Board()
+b.print()
+print("/////////////")
+
+b.set_position("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1")
 b.print()
