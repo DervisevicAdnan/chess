@@ -21,6 +21,8 @@ class Play:
         self.is_check = False
         self.long_castle_allowed = {color.BLACK: True, color.WHITE: True}
         self.short_castle_allowed =  {color.BLACK: True, color.WHITE: True}
+        # ideja je da previous_moves bude lista tuplova (Figure, prev_x, prev_y, new_x, new_y)
+        self.previous_moves = []
 
     def get_all_valid_moves(self):
         valid_moves = []
@@ -50,19 +52,45 @@ class Play:
             if x < 7:
                 if isinstance(self.board.board[x + 1][y], EmptyField):
                     valid.append((x, y, x + 1, y))
+                    if x == 1 and isinstance(self.board.board[x + 2][y], EmptyField):
+                        valid.append((x, y, x + 2, y))
                 if y < 7 and isinstance(self.board.board[x + 1][y + 1],Figure) and self.board.board[x + 1][y + 1].color != color.BLACK:
                     valid.append((x, y, x + 1, y + 1))
                 if y > 0 and isinstance(self.board.board[x + 1][y - 1],Figure) and self.board.board[x + 1][y - 1].color != color.BLACK:
                     valid.append((x, y, x + 1, y - 1))
+                if x == 4:
+                    if y < 7 and self.valid_en_passant(self.board.board[x][y], x, y + 1):
+                        valid.append((x, y, x + 1, y + 1))
+                    if y > 0 and self.valid_en_passant(self.board.board[x][y], x, y - 1):
+                        valid.append((x, y, x + 1, y - 1))
         else:
             if x > 0:
                 if not isinstance(self.board.board[x - 1][y], Figure):
                     valid.append((x, y, x - 1, y))
-                if y < 7 and isinstance(self.board.board[x - 1][y + 1],Figure) and self.board.board[x - 1][y + 1].color != color.BLACK:
+                    if x == 6 and isinstance(self.board.board[x - 2][y], EmptyField):
+                        valid.append((x, y, x - 2, y))
+                if y < 7 and isinstance(self.board.board[x - 1][y + 1],Figure) and self.board.board[x - 1][y + 1].color != color.WHITE and abs(x - self.previous_moves[-1][0]) == 2:
                     valid.append((x, y, x - 1, y + 1))
-                if y > 0 and isinstance(self.board.board[x - 1][y - 1],Figure) and self.board.board[x - 1][y - 1].color != color.BLACK:
+                if y > 0 and isinstance(self.board.board[x - 1][y - 1],Figure) and self.board.board[x - 1][y - 1].color != color.WHITE:
                     valid.append((x, y, x - 1, y - 1))
+                if x == 3:
+                    if y < 7 and self.valid_en_passant(self.board.board[x][y], x, y + 1):
+                        valid.append(x, y, x - 1, y + 1)
+                    if y > 0 and self.valid_en_passant(self.board.board[x][y], x, y - 1):
+                        valid.append(x, y, x - 1, y - 1)
         return valid
+    
+    def valid_en_passant(self, pawn, x, y):
+        if not self.previous_moves:
+            return False
+        
+        prev_move = self.previous_moves[-1]
+        figure_moved, prev_x, prev_y, new_x, new_y = prev_move
+
+        if isinstance(self.board[x][y], Pawn) and abs(new_x - prev_x) == 2 and isinstance(figure_moved, Pawn) and self.board[x][y].color != pawn.color:
+            if new_x == x and (new_y == y - 1 or new_y == y + 1):
+                return True
+        return False
 
     def get_rook_valid_moves(self, x, y):
         valid = []
