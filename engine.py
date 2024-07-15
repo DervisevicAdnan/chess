@@ -12,8 +12,8 @@ notation_decode = {
 }
 
 class color(Enum):
-    WHITE = 1
-    BLACK = 2
+    WHITE = 0
+    BLACK = 1
 
 class Play:
     def __init__(self) -> None:
@@ -41,10 +41,15 @@ class Board:
         starting_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
         self.board = []
         self.set_position(starting_FEN)
+        
+        self.kings_positions = {color.BLACK: (8, 8), color.WHITE: (8, 8)}
 
-        self.is_check = False
+        self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
+        self.is_check = {color.BLACK: False, color.WHITE: False}
         self.long_castle_allowed = {color.BLACK: True, color.WHITE: True}
         self.short_castle_allowed =  {color.BLACK: True, color.WHITE: True}
+
+        self.update_valid_moves()
         # ideja je da previous_moves bude lista tuplova (Figure, prev_x, prev_y, new_x, new_y)
         # self.previous_moves = []
 
@@ -148,11 +153,18 @@ class Board:
         return fen_notation
     
     def get_all_valid_moves(self):
-        valid_moves = []
+        return self.valid_moves_by_color[color.BLACK] + self.valid_moves_by_color[color.WHITE]
+
+    def update_valid_moves(self):
         for i in range(8):
             for j in range(8):
-                if isinstance(self.board[i][j],Figure):
-                    valid_moves.append(self.get_figure_valid_moves(i,j))
+                if isinstance(self.board[i][j], King):
+                    self.kings_positions[self.board[i][j].color] = (i, j)
+                elif isinstance(self.board[i][j], Figure):
+                    self.valid_moves_by_color[self.board[i][j].color].append(self.get_figure_valid_moves(i,j))
+        self.valid_moves_by_color[color.BLACK].append(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
+        self.valid_moves_by_color[color.WHITE].append(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
+        pass
 
     def get_figure_valid_moves(self, i, j):
         if isinstance(self.board[i][j], Pawn):
@@ -303,13 +315,27 @@ class Board:
         return valid
     
     def get_king_valid_moves(self, x, y):
-        pass
+        valid = []
+        for i in range(min(x - 1, 0), max(x + 2, 8)):
+            for j in range(min(y - 1, 0), max(y + 2, 8)):
+                if i == x and j == y:
+                    self.is_check[self.board[x][y].color] = self.is_field_atacked(i, j, self.board[x][y].color)
+                elif not self.is_field_atacked(i, j, self.board[x][y].color):
+                    valid.append((x, y, i, j))
+        return valid
 
     def get_queen_valid_moves(self, x, y):
         valid = []
         valid.append(self.get_rook_valid_moves(x, y))
         valid.append(self.get_bishop_valid_moves(x, y))
         return valid
+    
+    def is_field_atacked(self, x, y, king_color):
+        for moves in self.valid_moves_by_color[color((king_color.value+1)%2)]:
+            if moves[-2] == x and moves[-1] == y:
+                return True
+        return False
+
 class Field:
     def __init__(self) -> None:
         pass
