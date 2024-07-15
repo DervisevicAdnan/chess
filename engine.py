@@ -46,7 +46,7 @@ class Board:
         self.long_castle_allowed = {color.BLACK: True, color.WHITE: True}
         self.short_castle_allowed =  {color.BLACK: True, color.WHITE: True}
         # ideja je da previous_moves bude lista tuplova (Figure, prev_x, prev_y, new_x, new_y)
-        self.previous_moves = []
+        # self.previous_moves = []
 
     def set_position(self, fen_notation):
         self.board = [[EmptyField() for _ in range(8)] for _ in range(8)]
@@ -182,9 +182,9 @@ class Board:
                 if y > 0 and isinstance(self.board[x + 1][y - 1],Figure) and self.board[x + 1][y - 1].color != color.BLACK:
                     valid.append((x, y, x + 1, y - 1))
                 if x == 4:
-                    if y < 7 and self.valid_en_passant(self.board[x][y], x, y + 1):
+                    if y < 7 and isinstance(self.board[x + 1, y + 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y + 1):
                         valid.append((x, y, x + 1, y + 1))
-                    if y > 0 and self.valid_en_passant(self.board[x][y], x, y - 1):
+                    if y > 0 and isinstance(self.board[x + 1, y - 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y - 1):
                         valid.append((x, y, x + 1, y - 1))
         else:
             if x > 0:
@@ -197,12 +197,13 @@ class Board:
                 if y > 0 and isinstance(self.board[x - 1][y - 1],Figure) and self.board[x - 1][y - 1].color != color.WHITE:
                     valid.append((x, y, x - 1, y - 1))
                 if x == 3:
-                    if y < 7 and self.valid_en_passant(self.board[x][y], x, y + 1):
+                    if y < 7 and isinstance(self.board[x - 1, y + 1], EnPassantEmptyField):   # self.valid_en_passant(self.board[x][y], x, y + 1):
                         valid.append(x, y, x - 1, y + 1)
-                    if y > 0 and self.valid_en_passant(self.board[x][y], x, y - 1):
+                    if y > 0 and isinstance(self.board[x - 1, y - 1], EnPassantEmptyField):   # self.valid_en_passant(self.board[x][y], x, y - 1):
                         valid.append(x, y, x - 1, y - 1)
         return valid
     
+    '''
     def valid_en_passant(self, pawn, x, y):
         if not self.previous_moves:
             return False
@@ -214,6 +215,7 @@ class Board:
             if new_x == x and (new_y == y - 1 or new_y == y + 1):
                 return True
         return False
+    '''
 
     def get_rook_valid_moves(self, x, y):
         valid = []
@@ -321,6 +323,13 @@ class EmptyField(Field):
     
     def to_string(self):
         return "  "
+
+class EnPassantEmptyField(EmptyField):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def to_string(self):
+        return super().to_string()
 
 class Figure(Field):
     def __init__(self, color) -> None:
