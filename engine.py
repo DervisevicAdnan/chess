@@ -227,14 +227,15 @@ class Board:
         return self.valid_moves_by_color[color.BLACK] + self.valid_moves_by_color[color.WHITE]
 
     def update_valid_moves(self):
+        self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
         for i in range(8):
             for j in range(8):
                 if isinstance(self.board[i][j], King):
                     self.kings_positions[self.board[i][j].color] = (i, j)
                 elif isinstance(self.board[i][j], Figure):
-                    self.valid_moves_by_color[self.board[i][j].color].append(self.get_figure_valid_moves(i,j))
-        self.valid_moves_by_color[color.BLACK].append(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
-        self.valid_moves_by_color[color.WHITE].append(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
+                    self.valid_moves_by_color[self.board[i][j].color].extend(self.get_figure_valid_moves(i,j))
+        self.valid_moves_by_color[color.BLACK].extend(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
+        self.valid_moves_by_color[color.WHITE].extend(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
         pass
 
     def get_figure_valid_moves(self, i, j):
@@ -389,18 +390,19 @@ class Board:
     
     def get_king_valid_moves(self, x, y):
         valid = []
-        for i in range(min(x - 1, 0), max(x + 2, 8)):
-            for j in range(min(y - 1, 0), max(y + 2, 8)):
+        for i in range(max(x - 1, 0), min(x + 2, 8)):
+            for j in range(max(y - 1, 0), min(y + 2, 8)):
                 if i == x and j == y:
                     self.is_check[self.board[x][y].color] = self.is_field_atacked(i, j, self.board[x][y].color)
-                elif not self.is_field_atacked(i, j, self.board[x][y].color):
+                elif not self.is_field_atacked(i, j, self.board[x][y].color) and (isinstance(self.board[i][j], EmptyField) or (isinstance(self.board[i][j], Figure) and self.board[i][j].color != self.board[x][y].color)):
+                    # nije pokriven slucaj kada figuru suprotne boje cuva neka druga figura
                     valid.append((x, y, i, j))
         return valid
 
     def get_queen_valid_moves(self, x, y):
         valid = []
-        valid.append(self.get_rook_valid_moves(x, y))
-        valid.append(self.get_bishop_valid_moves(x, y))
+        valid.extend(self.get_rook_valid_moves(x, y))
+        valid.extend(self.get_bishop_valid_moves(x, y))
         return valid
     
     def is_field_atacked(self, x, y, king_color):
@@ -486,7 +488,8 @@ print('\n')
 
 print(b.encode_FEN())
 list = b.valid_moves_by_color[color.WHITE]
-list = [x for x in list if x != []]
-list = [x for x in list if x != [[], []]]
+#list = [x for x in list if x != []]
+#list = [x for x in list if x != [[], []]]
 print(len(list))
 print('\n')
+print(list)
