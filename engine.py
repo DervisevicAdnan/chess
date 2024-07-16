@@ -262,13 +262,16 @@ class Board:
                     if x == 1 and isinstance(self.board[x + 2][y], EmptyField):
                         valid.append((x, y, x + 2, y))
                 if y < 7 and isinstance(self.board[x + 1][y + 1],Figure) and self.board[x + 1][y + 1].color != color.BLACK:
+                    # piece = self.simulate_move(x, y, x + 1, y + 1)
+                    # if not self.is_field_atacked(x, y, color.BLACK):
                     valid.append((x, y, x + 1, y + 1))
+                    # self.unmake_move(x, y, x + 1, y + 1, piece)
                 if y > 0 and isinstance(self.board[x + 1][y - 1],Figure) and self.board[x + 1][y - 1].color != color.BLACK:
                     valid.append((x, y, x + 1, y - 1))
                 if x == 4:
-                    if y < 7 and isinstance(self.board[x + 1, y + 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y + 1):
+                    if y < 7 and isinstance(self.board[x + 1][y + 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y + 1):
                         valid.append((x, y, x + 1, y + 1))
-                    if y > 0 and isinstance(self.board[x + 1, y - 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y - 1):
+                    if y > 0 and isinstance(self.board[x + 1][y - 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y - 1):
                         valid.append((x, y, x + 1, y - 1))
         else:
             if x > 0:
@@ -276,7 +279,7 @@ class Board:
                     valid.append((x, y, x - 1, y))
                     if x == 6 and isinstance(self.board[x - 2][y], EmptyField):
                         valid.append((x, y, x - 2, y))
-                if y < 7 and isinstance(self.board[x - 1][y + 1],Figure) and self.board[x - 1][y + 1].color != color.WHITE and abs(x - self.previous_moves[-1][0]) == 2:
+                if y < 7 and isinstance(self.board[x - 1][y + 1],Figure) and self.board[x - 1][y + 1].color != color.WHITE: # and abs(x - self.previous_moves[-1][0]) == 2:
                     valid.append((x, y, x - 1, y + 1))
                 if y > 0 and isinstance(self.board[x - 1][y - 1],Figure) and self.board[x - 1][y - 1].color != color.WHITE:
                     valid.append((x, y, x - 1, y - 1))
@@ -395,8 +398,10 @@ class Board:
                 if i == x and j == y:
                     self.is_check[self.board[x][y].color] = self.is_field_atacked(i, j, self.board[x][y].color)
                 elif not self.is_field_atacked(i, j, self.board[x][y].color) and (isinstance(self.board[i][j], EmptyField) or (isinstance(self.board[i][j], Figure) and self.board[i][j].color != self.board[x][y].color)):
-                    # nije pokriven slucaj kada figuru suprotne boje cuva neka druga figura
                     valid.append((x, y, i, j))
+                elif not self.is_field_atacked(i, j, self.board[x][y].color) and isinstance(self.board[i][j], Figure) and self.board[i][j].color != self.board[x][y].color:
+                    if not self.is_field_protected(i, j, self.board[i][j].color):
+                        valid.append((x, y, i, j))
         return valid
 
     def get_queen_valid_moves(self, x, y):
@@ -407,6 +412,23 @@ class Board:
     
     def is_field_atacked(self, x, y, king_color):
         for moves in self.valid_moves_by_color[color((king_color.value+1)%2)]:
+            if moves:
+                if moves[-2] == x and moves[-1] == y:
+                    return True
+        return False
+
+    def simulate_move(self, old_x, old_y, new_x, new_y):
+        piece = self.board[old_x][old_y]
+        self.board[new_x][new_y] = self.board[old_x][old_y]
+        self.board[old_x][old_y] = EmptyField()
+        return piece
+
+    def unmake_move(self, old_x, old_y, new_x, new_y, piece):
+        self.board[old_x][old_y] = self.board[new_x][new_y]
+        self.board[new_x][old_y] = piece
+    
+    def is_field_protected(self, x, y, color):
+        for moves in self.valid_moves_by_color[color]:
             if moves:
                 if moves[-2] == x and moves[-1] == y:
                     return True
@@ -481,15 +503,14 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('1r1qk2r/pbpp1ppp/1pn2n2/2b1p3/2B1P3/1PN2N2/PBPP1PPP/1R1Q1RK1 b k - 7 8')
+b.set_position('7b/8/8/8/3N4/2K5/8/8 w - - 0 1')
 b.print()
 
 print('\n')
 
 print(b.encode_FEN())
-list = b.valid_moves_by_color[color.WHITE]
-#list = [x for x in list if x != []]
-#list = [x for x in list if x != [[], []]]
-print(len(list))
-print('\n')
-print(list)
+b.update_valid_moves()
+print(len(b.get_all_valid_moves()))
+
+
+
