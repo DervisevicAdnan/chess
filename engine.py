@@ -51,6 +51,9 @@ class Board:
 
         self.guarded_pieces = {color.BLACK: set(), color.WHITE: set()}
 
+        self.checkmate = {color.BLACK: False, color.WHITE: False}
+        self.draw = False
+
         self.active_color_move = color.WHITE
         self.half_moves = 0
         self.moves_num = 1
@@ -240,6 +243,9 @@ class Board:
                     
         self.valid_moves_by_color[color.BLACK].extend(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
         self.valid_moves_by_color[color.WHITE].extend(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
+        for col in [color.WHITE, color.BLACK]:
+            if len(self.valid_moves_by_color[col]) == 0 and not self.checkmate[col]:
+                self.draw = True
         pass
 
     def get_figure_valid_moves(self, i, j):
@@ -460,6 +466,8 @@ class Board:
             valid.append((x, y, i, j - 2))
         if self.short_castle_allowed(x, y):
             valid.append((x, y, i, j + 2))
+        if len(valid) == 0 and self.is_check[self.board[x][y].color]:
+                self.checkmate[self.board[x][y].color] = True
         return valid
     
     def long_castle_allowed(self, x, y):
