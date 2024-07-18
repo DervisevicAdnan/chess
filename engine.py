@@ -440,14 +440,22 @@ class Board:
             for j in range(max(y - 1, 0), min(y + 2, 8)):
                 if i == x and j == y:
                     self.is_check[self.board[x][y].color] = self.is_field_atacked(i, j, self.board[x][y].color)
-                elif not self.is_field_atacked(i, j, self.board[x][y].color) and (isinstance(self.board[i][j], EmptyField) or (isinstance(self.board[i][j], Figure) and self.board[i][j].color != self.board[x][y].color)):
+                elif isinstance(self.board[i][j], EmptyField) and not self.is_field_atacked(i, j, self.board[x][y].color):
+                    valid.append((x, y, i, j))
+                elif isinstance(self.board[i][j], Figure):
+                    if self.board[i][j].color != self.board[x][y].color:
+                        if (i, j) not in self.guarded_pieces[color((self.board[x][y].color.value + 1) % 2)]:
+                            valid.append((x, y, i, j))
+                    else:
+                        self.guarded_pieces[self.board[x][y].color].add((i, j))
+                '''elif not self.is_field_atacked(i, j, self.board[x][y].color) and (isinstance(self.board[i][j], EmptyField) or (isinstance(self.board[i][j], Figure) and self.board[i][j].color != self.board[x][y].color)):
                     valid.append((x, y, i, j))
                 elif not self.is_field_atacked(i, j, self.board[x][y].color) and isinstance(self.board[i][j], Figure): 
                     if (i, j) not in self.guarded_pieces:
                         if self.board[i][j].color != self.board[x][y].color:
                             valid.append((x, y, i, j))
                         else:
-                            self.guarded_pieces[self.board[x][y].color].add((i, j))
+                            self.guarded_pieces[self.board[x][y].color].add((i, j))'''
         return valid
 
     def get_queen_valid_moves(self, x, y):
@@ -457,7 +465,7 @@ class Board:
         return valid
     
     def is_field_atacked(self, x, y, king_color):
-        for moves in self.valid_moves_by_color[color((king_color.value+1)%2)]:
+        for moves in self.valid_moves_by_color[color((king_color.value + 1) % 2)]:
             if moves:
                 if moves[-2] == x and moves[-1] == y:
                     return True
