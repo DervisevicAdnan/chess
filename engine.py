@@ -465,7 +465,10 @@ class Board:
         return valid
     
     def is_field_atacked(self, x, y, king_color):
-        for moves in self.valid_moves_by_color[color((king_color.value + 1) % 2)]:
+        opposite_color = color((king_color.value + 1) % 2)
+        if abs(x - self.kings_positions[opposite_color][0]) <= 1 and abs(y - self.kings_positions[opposite_color][1]) <= 1:
+            return True
+        for moves in self.valid_moves_by_color[opposite_color]:
             if moves:
                 if moves[-2] == x and moves[-1] == y:
                     return True
