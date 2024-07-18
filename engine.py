@@ -456,7 +456,25 @@ class Board:
                             valid.append((x, y, i, j))
                         else:
                             self.guarded_pieces[self.board[x][y].color].add((i, j))'''
+        if self.long_castle_allowed(x, y):
+            valid.append((x, y, i, j - 2))
+        if self.short_castle_allowed(x, y):
+            valid.append((x, y, i, j + 2))
         return valid
+    
+    def long_castle_allowed(self, x, y):
+        if self.long_castle_allowed:
+            for i in range(1, y):
+                if not isinstance(self.board[x][i], EmptyField) or self.is_field_atacked(x, i, self.board[x][y].color):
+                    return False
+        return True
+    
+    def short_castle_allowed(self, x, y):
+        if self.short_castle_allowed:
+            for i in range(y + 1, 7):
+                if not isinstance(self.board[x][i], EmptyField) or self.is_field_atacked(x, i, self.board[x][y].color):
+                    return False
+        return True
 
     def get_queen_valid_moves(self, x, y):
         valid = []
