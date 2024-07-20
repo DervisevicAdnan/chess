@@ -60,8 +60,6 @@ class Board:
         self.moves_num = 1
 
         self.update_valid_moves()
-        # ideja je da previous_moves bude lista tuplova (Figure, prev_x, prev_y, new_x, new_y)
-        # self.previous_moves = []
 
     def set_position(self, fen_notation):
         self.board = [[EmptyField() for _ in range(8)] for _ in range(8)]
@@ -82,7 +80,6 @@ class Board:
             print(row_line)
 
     def decode_FEN(self, fen_notation):
-
         split = fen_notation.split()
         board_position = split[0]
         active_color_move = split[1]
@@ -92,9 +89,7 @@ class Board:
             self.active_color_move = color.BLACK
         castling = split[2]
 
-        # Mogucnosti [('-'), ('KQkq'), ('Kkq'), ('Qkq'), ('KQk'), ('KQq'), ('KQ'), ('kq'), ('Kk'), ('Kq'), ('Qk'), ('Qq'), ('K'), ('Q'), ('k'), ('q')]
-
-        # Mislim da nije potrebno, postavlja se u konstruktoru
+        # Stavljeno da se ne postavlja slucaj kada pise samo -
         self.long_castle_allowed = {color.BLACK: False, color.WHITE: False}
         self.short_castle_allowed =  {color.BLACK: False, color.WHITE: False}
         
@@ -114,9 +109,8 @@ class Board:
             rank = 8 - int(en_passant[1])
             self.board[rank][file] = EnPassantEmptyField()
 
-        # Ovo je za brojanje koliko je proslo od zadnjeg saha ili uzimanja figure -> kasnije dodat kad se omoguci igranje
         self.half_moves = int(split[4])
-        # Ovo je za brojanje ukupnih poteza, update the poslije poteza crnog
+        
         self.moves_num = int(split[5])
 
         board_row = 0
@@ -248,7 +242,49 @@ class Board:
         for col in [color.WHITE, color.BLACK]:
             if len(self.valid_moves_by_color[col]) == 0 and not self.checkmate[col]:
                 self.draw = True
+        if self.half_moves == 100:
+            self.draw = True
+        if self.is_insufficient_material(self.encode_FEN()):
+            self.draw = True
         pass
+        
+    def is_insufficient_material(self, FEN):
+        position = FEN.split()[0]
+        remaining_pieces = position.replace('/', '')
+
+        piece_count = {
+            'r': 0,
+            'n': 0,
+            'b': 0,
+            'q': 0,
+            'k': 0,
+            'p': 0,
+            'R': 0,
+            'N': 0,
+            'B': 0,
+            'Q': 0,
+            'K': 0,
+            'P': 0
+        }
+
+        for character in remaining_pieces:
+            if character.isalpha():
+                piece_count[character] += 1
+
+        if piece_count['r'] == 0 and piece_count['q'] == 0 and piece_count['p'] == 0 and piece_count['R'] == 0 and piece_count['Q'] == 0 and piece_count['P'] == 0:
+            if piece_count['b'] == 0 and piece_count['B'] == 0:
+                if piece_count['n'] == 0 and piece_count['N'] == 0:
+                    return True
+                if (piece_count['n'] == 1 and piece_count['N'] == 0) or (piece_count['n'] == 0 and piece_count['N'] == 1):
+                    return True
+            if piece_count['n'] == 0 and piece_count['N'] == 0:
+                if (piece_count['b'] == 1 and piece_count['B'] == 0) or (piece_count['b'] == 0 and piece_count['B'] == 1):
+                    return True
+                elif piece_count['b'] == 1 and piece_count['B'] == 1:
+                    bishops = [i for i, char in enumerate(remaining_pieces) if char in 'bB']
+                    same_color = all((i // 8 + i % 8) % 2 == 0 for i in bishops) or all((i // 8 + i % 8) % 2 == 1 for i in bishops)
+                    if same_color:
+                        return True
 
     def get_figure_valid_moves(self, i, j):
         if isinstance(self.board[i][j], Pawn):
@@ -300,7 +336,7 @@ class Board:
                     valid.append((x, y, x - 1, y))
                     if x == 6 and isinstance(self.board[x - 2][y], EmptyField):
                         valid.append((x, y, x - 2, y))
-                if y < 7 and isinstance(self.board[x - 1][y + 1], Figure): # and abs(x - self.previous_moves[-1][0]) == 2:
+                if y < 7 and isinstance(self.board[x - 1][y + 1], Figure):
                     if self.board[x - 1][y + 1].color != color.WHITE:
                         if isinstance(self.board[x - 1][y + 1], King):
                             self.check_moves[color.WHITE].append((x, y, x - 1, y + 1))
@@ -317,9 +353,9 @@ class Board:
                     else:
                         self.guarded_pieces[self.board[x][y].color].add((x - 1, y - 1))
                 if x == 3:
-                    if y < 7 and isinstance(self.board[x - 1, y + 1], EnPassantEmptyField):   # self.valid_en_passant(self.board[x][y], x, y + 1):
+                    if y < 7 and isinstance(self.board[x - 1, y + 1], EnPassantEmptyField):   
                         valid.append(x, y, x - 1, y + 1)
-                    if y > 0 and isinstance(self.board[x - 1, y - 1], EnPassantEmptyField):   # self.valid_en_passant(self.board[x][y], x, y - 1):
+                    if y > 0 and isinstance(self.board[x - 1, y - 1], EnPassantEmptyField):   
                         valid.append(x, y, x - 1, y - 1)
         return valid
 
@@ -595,11 +631,13 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('4k2r/8/8/8/3K4/8/8/R7 w - - 0 1')
+b.set_position('8/8/8/8/4b1q1/8/7K/5k2 w - - 0 1')
 b.print()
 
 print('\n')
-
-
+b.get_all_valid_moves()
+print(b.valid_moves_by_color[color.WHITE])
+print('\n')
+print(b.draw)
 
 
