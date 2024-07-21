@@ -510,7 +510,7 @@ class Board:
                     valid.append((x, y, i, j))
                 elif isinstance(self.board[i][j], Figure):
                     if self.board[i][j].color != self.board[x][y].color:
-                        if (i, j) not in self.guarded_pieces[color((self.board[x][y].color.value + 1) % 2)]:
+                        if (i, j) not in self.guarded_pieces[color((self.board[x][y].color.value + 1) % 2)] and not self.is_field_attacked(i, j, self.board[x][y].color):
                             valid.append((x, y, i, j))
                     else:
                         self.guarded_pieces[self.board[x][y].color].add((i, j))
@@ -548,6 +548,16 @@ class Board:
         opposite_color = color((player_color.value + 1) % 2)
         if abs(x - self.kings_positions[opposite_color][0]) <= 1 and abs(y - self.kings_positions[opposite_color][1]) <= 1:
             return True
+        
+        # Iako mi nije jasno sto linija ova iznad ne pokriva ovaj slucaj, naredni kod je za slucaj kada pjesak napada dijagonalno polje
+        # Trenutno pokazuje da kralj moze na to mjesto
+
+        pawn_moves = [(-1, -1), (-1, 1)] if player_color == color.WHITE else [(1, -1), (1, 1)]
+
+        for X, Y in pawn_moves:
+            if 0 <= X + x < 8 and 0 <= Y + y < 8 and isinstance(self.board[x + X][y + Y], Pawn) and self.board[x + X][y + Y].color == opposite_color:
+                return True
+
         for moves in self.valid_moves_by_color[opposite_color]:
             if moves:
                 if moves[-2] == x and moves[-1] == y:
@@ -633,7 +643,7 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('8/8/8/8/4b1q1/8/7K/5k2 w - - 0 1')
+b.set_position('8/8/8/8/3k4/2ppp3/3p4/3K4 w - - 0 1')
 b.print()
 
 print('\n')
