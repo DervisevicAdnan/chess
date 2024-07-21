@@ -95,4 +95,10 @@ class TestDraw:
         # Insufficient material - Bijeli kralj i bijeli lovac na bijelom polju v crni kralj
         b = Board()
         b.set_position('8/8/8/8/8/8/8/k3KB2 w - - 0 1')
-        assert b.draw == True    
+        assert b.draw == True 
+
+    def test_seventeen(self):
+        # Half moves
+        b = Board()
+        b.set_position('8/8/8/4k2p/7P/4K3/8/8 w - - 100 200')   
+        assert b.draw == True
