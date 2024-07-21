@@ -38,10 +38,6 @@ class Board:
     '''
 
     def __init__(self):
-        starting_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        self.board = []
-        self.set_position(starting_FEN)
-        
         self.kings_positions = {color.BLACK: (8, 8), color.WHITE: (8, 8)}
 
         self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
@@ -59,6 +55,9 @@ class Board:
         self.half_moves = 0
         self.moves_num = 1
 
+        starting_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.board = []
+        self.set_position(starting_FEN)
         self.update_valid_moves()
 
     def set_position(self, fen_notation):
@@ -152,6 +151,7 @@ class Board:
                 elif character == 'P':
                     self.board[board_row][board_col] = Pawn(color.WHITE)
                 board_col += 1
+        self.update_valid_moves()
 
     def encode_FEN(self):
         fen_notation=""
@@ -236,7 +236,7 @@ class Board:
                     self.kings_positions[self.board[i][j].color] = (i, j)
                 elif isinstance(self.board[i][j], Figure):
                     self.valid_moves_by_color[self.board[i][j].color].extend(self.get_figure_valid_moves(i,j))
-                    
+         
         self.valid_moves_by_color[color.BLACK].extend(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
         self.valid_moves_by_color[color.WHITE].extend(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
         for col in [color.WHITE, color.BLACK]:
@@ -515,25 +515,27 @@ class Board:
                     else:
                         self.guarded_pieces[self.board[x][y].color].add((i, j))
         if self.long_castle_valid(x, y):
-            valid.append((x, y, i, j - 2))
+            valid.append((x, y, x, y - 2))
         if self.short_castle_valid(x, y):
-            valid.append((x, y, i, j + 2))
+            valid.append((x, y, x, y + 2))
         if len(valid) == 0 and self.is_check[self.board[x][y].color]:
                 self.checkmate[self.board[x][y].color] = True
         return valid
     
     def long_castle_valid(self, x, y):
-        if self.long_castle_allowed:
-            for i in range(1, y):
-                if not isinstance(self.board[x][i], EmptyField) or self.is_field_attacked(x, i, self.board[x][y].color):
-                    return False
+        if not self.long_castle_allowed[self.board[x][y].color]:
+            return False
+        for i in range(1, y):
+            if not isinstance(self.board[x][i], EmptyField) or self.is_field_attacked(x, i, self.board[x][y].color):
+                return False
         return True
     
     def short_castle_valid(self, x, y):
-        if self.short_castle_allowed:
-            for i in range(y + 1, 7):
-                if not isinstance(self.board[x][i], EmptyField) or self.is_field_attacked(x, i, self.board[x][y].color):
-                    return False
+        if not self.short_castle_allowed[self.board[x][y].color]:
+            return False
+        for i in range(y + 1, 7):
+            if not isinstance(self.board[x][i], EmptyField) or self.is_field_attacked(x, i, self.board[x][y].color):
+                return False
         return True
 
     def get_queen_valid_moves(self, x, y):
@@ -639,5 +641,3 @@ b.get_all_valid_moves()
 print(b.valid_moves_by_color[color.WHITE])
 print('\n')
 print(b.draw)
-
-
