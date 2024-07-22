@@ -449,7 +449,7 @@ class Board:
                 break
             else:
                 break
-        for i in range(1, min(x, 8 - y)):
+        for i in range(1, min(x + 1, 8 - y)):
             if isinstance(self.board[x - i][y + i], EmptyField):
                 valid.append((x, y, x - i, y + i))
             elif isinstance(self.board[x - i][y + i], Figure):
@@ -463,7 +463,7 @@ class Board:
                 break
             else:
                 break
-        for i in range(1, min(8 - x, y)):
+        for i in range(1, min(8 - x, y + 1)):
             if isinstance(self.board[x + i][y - i], EmptyField):
                 valid.append((x, y, x + i, y - i))
             elif isinstance(self.board[x + i][y - i], Figure):
@@ -643,11 +643,9 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('8/8/8/8/3k4/2ppp3/3p4/3K4 w - - 0 1')
+b.set_position('1n1r1b1r/P1P1P1P1/2BNq1k1/7R/3Q4/1P1N2K1/P1PBP3/5R2 w - - 15 45')
 b.print()
 
 print('\n')
-b.get_all_valid_moves()
-print(b.valid_moves_by_color[color.WHITE])
-print('\n')
-print(b.draw)
+
+
