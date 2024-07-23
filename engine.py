@@ -18,7 +18,7 @@ class color(Enum):
 class Play:
     def __init__(self) -> None:
         self.board = Board()
-    
+
 
 class Board:
 
@@ -91,14 +91,14 @@ class Board:
         # Stavljeno da se ne postavlja slucaj kada pise samo -
         self.long_castle_allowed = {color.BLACK: False, color.WHITE: False}
         self.short_castle_allowed =  {color.BLACK: False, color.WHITE: False}
-        
+
         if 'K' in castling:
             self.short_castle_allowed[color.WHITE] = True
         if 'Q' in castling:
             self.long_castle_allowed[color.WHITE] = True
         if 'k' in castling:
             self.short_castle_allowed[color.BLACK] = True
-        if 'q' in castling: 
+        if 'q' in castling:
             self.long_castle_allowed[color.BLACK] = True
 
         en_passant = split[3]
@@ -109,7 +109,7 @@ class Board:
             self.board[rank][file] = EnPassantEmptyField()
 
         self.half_moves = int(split[4])
-        
+
         self.moves_num = int(split[5])
 
         board_row = 0
@@ -130,7 +130,7 @@ class Board:
                     self.board[board_row][board_col] = Pawn(color.BLACK)
                 elif character == 'r':
                     self.board[board_row][board_col] = Rook(color.BLACK)
-                elif character == 'n': 
+                elif character == 'n':
                     self.board[board_row][board_col] = Knight(color.BLACK)
                 elif character == 'b':
                     self.board[board_row][board_col] = Bishop(color.BLACK)
@@ -381,64 +381,25 @@ class Board:
         return valid
     
     def get_bishop_valid_moves(self, x, y):
+        loop_ranges = [[(1, min(8 - x, 8 - y)), 1, 1], [(1, min(x, y) + 1), -1, -1], [(1, min(x + 1, 8 - y)), -1, 1], [(1, min(8 - x, y + 1)), 1, -1]]
         valid = []
-        for i in range(1, min(8 - x, 8 - y)):
-            if isinstance(self.board[x + i][y + i], EmptyField):
-                valid.append((x, y, x + i, y + i))
-            elif isinstance(self.board[x + i][y + i], Figure): 
-                if self.board[x + i][y + i].color != self.board[x][y].color:
-                    if isinstance(self.board[x + i][y + i], King):
-                        self.check_moves[self.board[x + i][y + i].color].append((x, y, x + i, y + i))
+        for loop_range in loop_ranges:
+            for i in range(*loop_range[0]):
+                tmp_x = loop_range[1] * i + x
+                tmp_y = loop_range[2] * i + y
+                if isinstance(self.board[tmp_x][tmp_y], EmptyField):
+                    valid.append((x, y, tmp_x, tmp_y))
+                elif isinstance(self.board[tmp_x][tmp_y], Figure): 
+                    if self.board[tmp_x][tmp_y].color != self.board[x][y].color:
+                        if isinstance(self.board[tmp_x][tmp_y], King):
+                            self.check_moves[self.board[tmp_x][tmp_y].color].append((x, y, tmp_x, tmp_y))
+                        else:
+                            valid.append((x, y, tmp_x, tmp_y))
                     else:
-                        valid.append((x, y, x + i, y + i))
+                        self.guarded_pieces[self.board[x][y].color].add((tmp_x, tmp_y)) 
+                    break
                 else:
-                   self.guarded_pieces[self.board[x][y].color].add((x + i, y + i)) 
-                break
-            else:
-                break
-        for i in range(1, min(x, y) + 1):
-            if isinstance(self.board[x - i][y - i], EmptyField):
-                valid.append((x, y, x - i, y - i))
-            elif isinstance(self.board[x - i][y - i], Figure):
-                if self.board[x - i][y - i].color != self.board[x][y].color:
-                    if isinstance(self.board[x - i][y - i], King):
-                        self.check_moves[self.board[x - i][y - i].color].append((x, y, x - i, y - i))
-                    else:
-                       valid.append((x, y, x - i, y - i))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((x - i, y - i)) 
-                break
-            else:
-                break
-        for i in range(1, min(x + 1, 8 - y)):
-            if isinstance(self.board[x - i][y + i], EmptyField):
-                valid.append((x, y, x - i, y + i))
-            elif isinstance(self.board[x - i][y + i], Figure):
-                if self.board[x - i][y + i].color != self.board[x][y].color:
-                    if isinstance(self.board[x - i][y + i], King):
-                        self.check_moves[self.board[x - i][y + i].color].append((x, y, x - i, y + i))
-                    else:
-                        valid.append((x, y, x - i, y + i))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((x - i, y + i))
-                break
-            else:
-                break
-        for i in range(1, min(8 - x, y + 1)):
-            if isinstance(self.board[x + i][y - i], EmptyField):
-                valid.append((x, y, x + i, y - i))
-            elif isinstance(self.board[x + i][y - i], Figure):
-                if self.board[x + i][y - i].color != self.board[x][y].color:
-                    if isinstance(self.board[x + i][y - i], King):
-                        self.check_moves[self.board[x + i][y - i].color].append((x, y, x + i, y - i))
-                    else:
-                        valid.append((x, y, x + i, y - i))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((x + i, y - i))
-                break
-            else:
-                break
-        
+                    break
         return valid
     
     def get_knight_valid_moves(self, x, y):
@@ -509,9 +470,6 @@ class Board:
         opposite_color = color((player_color.value + 1) % 2)
         if abs(x - self.kings_positions[opposite_color][0]) <= 1 and abs(y - self.kings_positions[opposite_color][1]) <= 1:
             return True
-        
-        # Iako mi nije jasno sto linija ova iznad ne pokriva ovaj slucaj, naredni kod je za slucaj kada pjesak napada dijagonalno polje
-        # Trenutno pokazuje da kralj moze na to mjesto
 
         pawn_moves = [(-1, -1), (-1, 1)] if player_color == color.WHITE else [(1, -1), (1, 1)]
 
