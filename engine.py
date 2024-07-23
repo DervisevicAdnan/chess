@@ -360,63 +360,24 @@ class Board:
         return valid
 
     def get_rook_valid_moves(self, x, y):
+        loop_ranges = [[(x + 1, 8), (y, y + 1)], [(x - 1, -1, -1), (y, y + 1)], [(x, x + 1), (y + 1, 8)], [(x, x + 1), (y - 1, -1, -1)]]
         valid = []
-        for i in range(x + 1, 8):
-            if isinstance(self.board[i][y], EmptyField):
-                valid.append((x, y, i, y))
-            elif isinstance(self.board[i][y], Figure):
-                if self.board[i][y].color != self.board[x][y].color:
-                    if isinstance(self.board[i][y], King):
-                        self.check_moves[self.board[x][y].color].append((x, y, i, y))
+        for loop_range in loop_ranges:
+            for i in range(*loop_range[0]):
+                for j in range(*loop_range[1]):
+                    if isinstance(self.board[i][j], EmptyField):
+                        valid.append((x, y, i, j))
+                    elif isinstance(self.board[i][j], Figure):
+                        if self.board[i][j].color != self.board[x][y].color:
+                            if isinstance(self.board[i][j], King):
+                                self.check_moves[self.board[x][y].color].append((x, y, i, j))
+                            else:
+                                valid.append((x, y, i, j))
+                        else:
+                            self.guarded_pieces[self.board[x][y].color].add((i, j))
+                        break
                     else:
-                        valid.append((x, y, i, y))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((i, y))
-                break
-            else:
-                break
-        for i in range(x - 1, -1, -1):
-            if isinstance(self.board[i][y], EmptyField):
-                valid.append((x, y, i, y))
-            elif isinstance(self.board[i][y], Figure):
-                if self.board[i][y].color != self.board[x][y].color:
-                    if isinstance(self.board[i][y], King):
-                        self.check_moves[self.board[x][y].color].append((x, y, i, y))
-                    else:
-                        valid.append((x, y, i, y))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((i, y))
-                break
-            else:
-                break
-        for j in range(y + 1, 8):
-            if isinstance(self.board[x][j], EmptyField):
-                valid.append((x, y, x, j))
-            elif isinstance(self.board[x][j], Figure):
-                if self.board[x][j].color != self.board[x][y].color:
-                    if isinstance(self.board[x][j], King):
-                        self.check_moves[self.board[x][j].color].append((x, y, x, j))
-                    else:
-                        valid.append((x, y, x, j))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((x, j))
-                break
-            else:
-                break
-        for j in range(y - 1, -1, -1):
-            if isinstance(self.board[x][j], EmptyField):
-                valid.append((x, y, x, j))
-            elif isinstance(self.board[x][j], Figure):
-                if self.board[x][j].color != self.board[x][y].color:
-                    if isinstance(self.board[x][j], King):
-                        self.check_moves[self.board[x][j].color].append((x, y, x, j))
-                    else:
-                        valid.append((x, y, x, j))
-                else:
-                    self.guarded_pieces[self.board[x][y].color].add((x, j))
-                break
-            else:
-                break
+                        break
         return valid
     
     def get_bishop_valid_moves(self, x, y):
