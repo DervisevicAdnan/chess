@@ -237,8 +237,13 @@ class Board:
                 elif isinstance(self.board[i][j], Figure):
                     self.valid_moves_by_color[self.board[i][j].color].extend(self.get_figure_valid_moves(i,j))
          
-        self.valid_moves_by_color[color.BLACK].extend(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
-        self.valid_moves_by_color[color.WHITE].extend(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
+        self.valid_moves_by_color[color.WHITE] = [move for move in self.valid_moves_by_color[color.WHITE] if not self.is_pinned(color.WHITE)]
+
+        self.valid_moves_by_color[color.BLACK] = [move for move in self.valid_moves_by_color[color.BLACK] if not self.is_pinned(color.BLACK)]
+        
+        self.valid_moves_by_color[color.WHITE] = [move for move in self.valid_moves_by_color if self.is_pinned(color.WHITE)]
+        self.valid_moves_by_color[color.BLACK] = [move for move in self.valid_moves_by_color if self.is_pinned(color.BLACK)]
+        
         for col in [color.WHITE, color.BLACK]:
             if len(self.valid_moves_by_color[col]) == 0 and not self.checkmate[col]:
                 self.draw = True
@@ -482,6 +487,16 @@ class Board:
                 if moves[-2] == x and moves[-1] == y:
                     return True
         return False
+    
+    def is_pinned(self, piece_color):
+        moves = self.valid_moves_by_color[piece_color]
+        for move in moves:
+            piece = self.simulate_move(move[0], move[1], move[2], move[3])
+            if self.is_field_attacked(self.kings_positions[piece_color][0], self.kings_positions[piece_color][1], piece_color):
+                self.unmake_move(move[0], move[1], move[2], move[3], piece)
+                return True
+            self.unmake_move(move[0], move[1], move[2], move[3], piece)
+        return False
 
     def simulate_move(self, old_x, old_y, new_x, new_y):
         piece = self.board[old_x][old_y]
@@ -491,7 +506,7 @@ class Board:
 
     def unmake_move(self, old_x, old_y, new_x, new_y, piece):
         self.board[old_x][old_y] = self.board[new_x][new_y]
-        self.board[new_x][old_y] = piece
+        self.board[new_x][new_y] = piece
 
 class Field:
     def __init__(self) -> None:
@@ -562,9 +577,13 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('1n1r1b1r/P1P1P1P1/2BNq1k1/7R/3Q4/1P1N2K1/P1PBP3/5R2 w - - 15 45')
+b.set_position('8/7k/8/8/8/8/7K/Q7 w - - 0 1')
 b.print()
 
 print('\n')
+
+b.update_valid_moves()
+print(len(b.valid_moves_by_color[color.WHITE]))
+
 
 
