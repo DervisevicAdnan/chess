@@ -22,21 +22,6 @@ class Play:
 
 class Board:
 
-    '''
-    
-    board 
-    
-    bR bN bB bQ bK bB bN bR
-    bP bP bP bP bP bP bP bP
-
-
-
-    
-    wP wP wP wP wP wP wP wP
-    wR wN wB wQ wK wB wN wR
-
-    '''
-
     def __init__(self):
         self.kings_positions = {color.BLACK: (8, 8), color.WHITE: (8, 8)}
 
@@ -239,14 +224,39 @@ class Board:
                 elif isinstance(self.board[i][j], Figure):
                     self.valid_moves_by_color[self.board[i][j].color].extend(self.get_figure_valid_moves(i,j))
          
-        for col in [color.WHITE, color.BLACK]:
-            if len(self.valid_moves_by_color[col]) == 0 and not self.checkmate[col]:
+        self.remove_pin_duplicates()
+        for colour in [color.WHITE, color.BLACK]:
+            if self.is_check[colour]:
+                self.remove_valid_if_check(colour)
+            else:
+                self.remove_pinned_moves(colour)
+        
+        self.check_draw()
+
+    def remove_pin_duplicates(self):
+        for colour in [color.WHITE, color.BLACK]:
+            self.pinned_moves[colour] = list(dict.fromkeys(self.pinned_moves[colour]))
+
+    def remove_pinned_moves(self, colour):
+        pinned_positions = {(move[2], move[3]) for move in self.pinned_moves[colour]}
+        self.valid_moves_by_color[colour] = [move for move in self.valid_moves_by_color[colour]
+            if (move[0], move[1]) not in pinned_positions
+        ]
+
+    def remove_valid_if_check(self, colour):
+        pinned_positions = {(move[2], move[3]) for move in self.pinned_moves[colour]}
+        self.valid_moves_by_color[colour] = [move for move in self.valid_moves_by_color[colour]
+            if (move[2], move[3]) in pinned_positions
+        ]
+
+    def check_draw(self):
+        for colour in [color.WHITE, color.BLACK]:
+            if len(self.valid_moves_by_color[colour]) == 0 and not self.checkmate[colour]:
                 self.draw = True
         if self.half_moves == 100:
             self.draw = True
         if self.is_insufficient_material(self.encode_FEN()):
             self.draw = True
-        pass
         
     def is_insufficient_material(self, FEN):
         position = FEN.split()[0]
@@ -559,15 +569,14 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('1n1r1b1r/P1P1P1P1/2BNq1k1/7R/3Q4/1P1N2K1/P1PBP3/5R2 w - - 15 45')
+b.set_position('rnbqk1nr/ppp2ppp/8/3pp2Q/1bPP4/4P3/PP3PPP/RN2KBNR b KQkq - 1 5')
 b.print()
 
 print('\n')
 
-b.update_valid_moves()
-print(len(b.valid_moves_by_color[color.WHITE]))
-
+print(b.valid_moves_by_color[color.WHITE], "\n")
 
 print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
 
 print("Pinned white: ", b.pinned_moves[color.WHITE], "\n")
+
