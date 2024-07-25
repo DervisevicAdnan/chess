@@ -238,7 +238,9 @@ class Board:
                     self.kings_positions[self.board[i][j].color] = (i, j)
                 elif isinstance(self.board[i][j], Figure):
                     self.valid_moves_by_color[self.board[i][j].color].extend(self.get_figure_valid_moves(i,j))
-         
+
+        self.valid_moves_by_color[color.BLACK].extend(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
+        self.valid_moves_by_color[color.WHITE].extend(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
         for col in [color.WHITE, color.BLACK]:
             if len(self.valid_moves_by_color[col]) == 0 and not self.checkmate[col]:
                 self.draw = True
@@ -559,7 +561,7 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('1n1r1b1r/P1P1P1P1/2BNq1k1/7R/3Q4/1P1N2K1/P1PBP3/5R2 w - - 15 45')
+b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
 b.print()
 
 print('\n')
@@ -567,7 +569,9 @@ print('\n')
 b.update_valid_moves()
 print(len(b.valid_moves_by_color[color.WHITE]))
 
-
 print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
 
 print("Pinned white: ", b.pinned_moves[color.WHITE], "\n")
+
+print("potezi crni: ", b.valid_moves_by_color[color.BLACK], "\n")
+print("potezi bijeli: ", b.valid_moves_by_color[color.WHITE], "\n")
