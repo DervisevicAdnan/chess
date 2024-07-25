@@ -230,6 +230,7 @@ class Board:
         return self.valid_moves_by_color[color.BLACK] + self.valid_moves_by_color[color.WHITE]
 
     def update_valid_moves(self):
+        self.pinned_moves = { color.BLACK: [], color.WHITE: []}
         self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
         self.guarded_pieces =  {color.BLACK: set(), color.WHITE: set()}
         for i in range(8):
@@ -562,11 +563,12 @@ class Pawn(Figure):
 
 b = Board()
 b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
+#b.set_position("rnbqk1nr/ppp2ppp/8/3pp2Q/1bPP4/4P3/PP3PPP/RN2KBNR b KQkq - 1 5")
 b.print()
 
 print('\n')
 
-b.update_valid_moves()
+#b.update_valid_moves()
 print(len(b.valid_moves_by_color[color.WHITE]))
 
 print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
