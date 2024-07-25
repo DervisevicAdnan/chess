@@ -55,6 +55,8 @@ class Board:
         self.half_moves = 0
         self.moves_num = 1
 
+        self.pinned_moves = { color.BLACK: [], color.WHITE: []}
+
         starting_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.board = []
         self.set_position(starting_FEN)
@@ -140,7 +142,7 @@ class Board:
                     self.board[board_row][board_col] = King(color.BLACK)
                 elif character == 'R':
                     self.board[board_row][board_col] = Rook(color.WHITE)
-                elif character == 'N': 
+                elif character == 'N':
                     self.board[board_row][board_col] = Knight(color.WHITE)
                 elif character == 'B':
                     self.board[board_row][board_col] = Bishop(color.WHITE)
@@ -199,16 +201,16 @@ class Board:
                         elif isinstance(square, Queen):
                             fen_notation += 'q'
             if empty_field_counter > 0:
-                    fen_notation += str(empty_field_counter)
-                    empty_field_counter = 0
+                fen_notation += str(empty_field_counter)
+                empty_field_counter = 0
             if row_index != 7:
                 fen_notation += '/'
-        
+
         if self.active_color_move == color.WHITE:
             fen_notation += ' ' + 'w'
         else:
             fen_notation += ' ' + 'b'
-        
+
         castle_rights = ""
         if self.short_castle_allowed[color.WHITE] == True:
             castle_rights += 'K'
@@ -307,102 +309,108 @@ class Board:
         pass
 
     def get_pawn_valid_moves(self, x, y):
+        # x <, x + , x ==, enpassant x ==
+        move_data = [7, 1, 1, 4]
+        if self.board[x][y].color == color.WHITE:
+            move_data = [0, -1, 6, 3]
         valid = []
-        if self.board[x][y].color == color.BLACK:
-            if x < 7:
-                if isinstance(self.board[x + 1][y], EmptyField):
-                    valid.append((x, y, x + 1, y))
-                    if x == 1 and isinstance(self.board[x + 2][y], EmptyField):
-                        valid.append((x, y, x + 2, y))
-                if y < 7 and isinstance(self.board[x + 1][y + 1], Figure):
-                    if self.board[x + 1][y + 1].color != color.BLACK:
-                        if isinstance(self.board[x + 1][y + 1], King):
-                            self.check_moves[color.BLACK].append((x, y, x + 1, y + 1))
-                        else:
-                            valid.append((x, y, x + 1, y + 1))
+
+        if x < move_data[0]:
+            tmp_x = x + move_data[1]
+            if isinstance(self.board[tmp_x][y], EmptyField):
+                valid.append((x, y, tmp_x, y))
+                if x == move_data[2] and isinstance(self.board[tmp_x + move_data[1]][y], EmptyField):
+                    valid.append((x, y, tmp_x + move_data[1], y))
+            if y < 7 and isinstance(self.board[tmp_x][y + 1], Figure):
+                if self.board[tmp_x][y + 1].color != self.board[x][y].color:
+                    if isinstance(self.board[tmp_x][y + 1], King):
+                        self.check_moves[self.board[x][y].color].append((x, y, tmp_x, y + 1))
                     else:
-                        self.guarded_pieces[self.board[x][y].color].add((x + 1, y + 1))
-                if y > 0 and isinstance(self.board[x + 1][y - 1], Figure) and self.board[x + 1][y - 1].color != color.BLACK:
-                    if self.board[x + 1][y - 1].color != color.BLACK:
-                        if isinstance(self.board[x + 1][y - 1], King):
-                            self.check_moves[color.BLACK].append((x, y, x + 1, y - 1))
-                        else:
-                            valid.append((x, y, x + 1, y - 1))
+                        valid.append((x, y, tmp_x, y + 1))
+                else:
+                    self.guarded_pieces[self.board[x][y].color].add((tmp_x, y + 1))
+            if y > 0 and isinstance(self.board[tmp_x][y - 1], Figure):
+                if self.board[tmp_x][y - 1].color != self.board[x][y].color:
+                    if isinstance(self.board[tmp_x][y - 1], King):
+                        self.check_moves[self.board[x][y].color].append((x, y, tmp_x, y - 1))
                     else:
-                        self.guarded_pieces[self.board[x][y].color].add((x + 1, y - 1))
-                if x == 4:
-                    if y < 7 and isinstance(self.board[x + 1][y + 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y + 1):
-                        valid.append((x, y, x + 1, y + 1))
-                    if y > 0 and isinstance(self.board[x + 1][y - 1], EnPassantEmptyField):  # self.valid_en_passant(self.board[x][y], x, y - 1):
-                        valid.append((x, y, x + 1, y - 1))
-        else:
-            if x > 0:
-                if not isinstance(self.board[x - 1][y], Figure):
-                    valid.append((x, y, x - 1, y))
-                    if x == 6 and isinstance(self.board[x - 2][y], EmptyField):
-                        valid.append((x, y, x - 2, y))
-                if y < 7 and isinstance(self.board[x - 1][y + 1], Figure):
-                    if self.board[x - 1][y + 1].color != color.WHITE:
-                        if isinstance(self.board[x - 1][y + 1], King):
-                            self.check_moves[color.WHITE].append((x, y, x - 1, y + 1))
-                        else:
-                            valid.append((x, y, x - 1, y + 1))
-                    else:
-                        self.guarded_pieces[self.board[x][y].color].add((x - 1, y + 1))
-                if y > 0 and isinstance(self.board[x - 1][y - 1], Figure):
-                    if self.board[x - 1][y - 1].color != color.WHITE:
-                        if isinstance(self.board[x - 1][y - 1], King):
-                            self.check_moves[color.WHITE].append((x, y, x - 1, y - 1))
-                        else:
-                            valid.append((x, y, x - 1, y - 1))
-                    else:
-                        self.guarded_pieces[self.board[x][y].color].add((x - 1, y - 1))
-                if x == 3:
-                    if y < 7 and isinstance(self.board[x - 1, y + 1], EnPassantEmptyField):   
-                        valid.append(x, y, x - 1, y + 1)
-                    if y > 0 and isinstance(self.board[x - 1, y - 1], EnPassantEmptyField):   
-                        valid.append(x, y, x - 1, y - 1)
+                        valid.append((x, y, tmp_x, y - 1))
+                else:
+                    self.guarded_pieces[self.board[x][y].color].add((tmp_x, y - 1))
+            if x == move_data[3]:
+                if y < 7 and isinstance(self.board[tmp_x][y + 1], EnPassantEmptyField):
+                    valid.append((x, y, tmp_x, y + 1))
+                if y > 0 and isinstance(self.board[tmp_x][y - 1], EnPassantEmptyField):
+                    valid.append((x, y, tmp_x, y - 1))
         return valid
 
     def get_rook_valid_moves(self, x, y):
         loop_ranges = [[(x + 1, 8), (y, y + 1)], [(x - 1, -1, -1), (y, y + 1)], [(x, x + 1), (y + 1, 8)], [(x, x + 1), (y - 1, -1, -1)]]
         valid = []
         for loop_range in loop_ranges:
+            break_flag = False
+            pinned = []
+            ignore_for_valid = False
             for i in range(*loop_range[0]):
                 for j in range(*loop_range[1]):
                     if isinstance(self.board[i][j], EmptyField):
-                        valid.append((x, y, i, j))
+                        if not ignore_for_valid:
+                            valid.append((x, y, i, j))
+                        pinned.append((x, y, i, j))
                     elif isinstance(self.board[i][j], Figure):
                         if self.board[i][j].color != self.board[x][y].color:
                             if isinstance(self.board[i][j], King):
                                 self.check_moves[self.board[x][y].color].append((x, y, i, j))
+                                self.pinned_moves[self.board[i][j].color].extend(pinned)
+                                break
                             else:
-                                valid.append((x, y, i, j))
+                                if not ignore_for_valid:
+                                    valid.append((x, y, i, j))
+                                    pinned.append((x, y, i, j))
+                                    ignore_for_valid = True
+                                else:
+                                    break_flag = True
+                                    break
                         else:
                             self.guarded_pieces[self.board[x][y].color].add((i, j))
-                        break
+                            break_flag = True
+                            break
                     else:
+                        break_flag = True
                         break
+                if break_flag:
+                    break
         return valid
     
     def get_bishop_valid_moves(self, x, y):
         loop_ranges = [[(1, min(8 - x, 8 - y)), 1, 1], [(1, min(x, y) + 1), -1, -1], [(1, min(x + 1, 8 - y)), -1, 1], [(1, min(8 - x, y + 1)), 1, -1]]
         valid = []
         for loop_range in loop_ranges:
+            ignore_for_valid = False
+            pinned = []
             for i in range(*loop_range[0]):
                 tmp_x = loop_range[1] * i + x
                 tmp_y = loop_range[2] * i + y
                 if isinstance(self.board[tmp_x][tmp_y], EmptyField):
-                    valid.append((x, y, tmp_x, tmp_y))
+                    if not ignore_for_valid:
+                        valid.append((x, y, tmp_x, tmp_y))
+                    pinned.append((x, y, tmp_x, tmp_y))
                 elif isinstance(self.board[tmp_x][tmp_y], Figure): 
                     if self.board[tmp_x][tmp_y].color != self.board[x][y].color:
                         if isinstance(self.board[tmp_x][tmp_y], King):
                             self.check_moves[self.board[tmp_x][tmp_y].color].append((x, y, tmp_x, tmp_y))
+                            self.pinned_moves[self.board[tmp_x][tmp_y].color].extend(pinned)
+                            break
                         else:
-                            valid.append((x, y, tmp_x, tmp_y))
+                            if not ignore_for_valid:
+                                valid.append((x, y, tmp_x, tmp_y))
+                                pinned.append((x, y, tmp_x, tmp_y))
+                                ignore_for_valid = True
+                            else:
+                                break
                     else:
                         self.guarded_pieces[self.board[x][y].color].add((tmp_x, tmp_y)) 
-                    break
+                        break
                 else:
                     break
         return valid
@@ -577,7 +585,7 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('8/7k/8/8/8/8/7K/Q7 w - - 0 1')
+b.set_position('1n1r1b1r/P1P1P1P1/2BNq1k1/7R/3Q4/1P1N2K1/P1PBP3/5R2 w - - 15 45')
 b.print()
 
 print('\n')
@@ -586,4 +594,6 @@ b.update_valid_moves()
 print(len(b.valid_moves_by_color[color.WHITE]))
 
 
+print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
 
+print("Pinned white: ", b.pinned_moves[color.WHITE], "\n")
