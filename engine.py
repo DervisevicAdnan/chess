@@ -55,6 +55,8 @@ class Board:
         self.half_moves = 0
         self.moves_num = 1
 
+        self.pinned_moves = { color.BLACK: [], color.WHITE: []}
+
         starting_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.board = []
         self.set_position(starting_FEN)
@@ -341,41 +343,69 @@ class Board:
         loop_ranges = [[(x + 1, 8), (y, y + 1)], [(x - 1, -1, -1), (y, y + 1)], [(x, x + 1), (y + 1, 8)], [(x, x + 1), (y - 1, -1, -1)]]
         valid = []
         for loop_range in loop_ranges:
+            break_flag = False
+            pinned = []
+            ignore_for_valid = False
             for i in range(*loop_range[0]):
                 for j in range(*loop_range[1]):
                     if isinstance(self.board[i][j], EmptyField):
-                        valid.append((x, y, i, j))
+                        if not ignore_for_valid:
+                            valid.append((x, y, i, j))
+                        pinned.append((x, y, i, j))
                     elif isinstance(self.board[i][j], Figure):
                         if self.board[i][j].color != self.board[x][y].color:
                             if isinstance(self.board[i][j], King):
                                 self.check_moves[self.board[x][y].color].append((x, y, i, j))
+                                self.pinned_moves[self.board[i][j].color].extend(pinned)
+                                break
                             else:
-                                valid.append((x, y, i, j))
+                                if not ignore_for_valid:
+                                    valid.append((x, y, i, j))
+                                    pinned.append((x, y, i, j))
+                                    ignore_for_valid = True
+                                else:
+                                    break_flag = True
+                                    break
                         else:
                             self.guarded_pieces[self.board[x][y].color].add((i, j))
-                        break
+                            break_flag = True
+                            break
                     else:
+                        break_flag = True
                         break
+                if break_flag:
+                    break
         return valid
     
     def get_bishop_valid_moves(self, x, y):
         loop_ranges = [[(1, min(8 - x, 8 - y)), 1, 1], [(1, min(x, y) + 1), -1, -1], [(1, min(x + 1, 8 - y)), -1, 1], [(1, min(8 - x, y + 1)), 1, -1]]
         valid = []
         for loop_range in loop_ranges:
+            ignore_for_valid = False
+            pinned = []
             for i in range(*loop_range[0]):
                 tmp_x = loop_range[1] * i + x
                 tmp_y = loop_range[2] * i + y
                 if isinstance(self.board[tmp_x][tmp_y], EmptyField):
-                    valid.append((x, y, tmp_x, tmp_y))
+                    if not ignore_for_valid:
+                        valid.append((x, y, tmp_x, tmp_y))
+                    pinned.append((x, y, tmp_x, tmp_y))
                 elif isinstance(self.board[tmp_x][tmp_y], Figure): 
                     if self.board[tmp_x][tmp_y].color != self.board[x][y].color:
                         if isinstance(self.board[tmp_x][tmp_y], King):
                             self.check_moves[self.board[tmp_x][tmp_y].color].append((x, y, tmp_x, tmp_y))
+                            self.pinned_moves[self.board[tmp_x][tmp_y].color].extend(pinned)
+                            break
                         else:
-                            valid.append((x, y, tmp_x, tmp_y))
+                            if not ignore_for_valid:
+                                valid.append((x, y, tmp_x, tmp_y))
+                                pinned.append((x, y, tmp_x, tmp_y))
+                                ignore_for_valid = True
+                            else:
+                                break
                     else:
                         self.guarded_pieces[self.board[x][y].color].add((tmp_x, tmp_y)) 
-                    break
+                        break
                 else:
                     break
         return valid
@@ -540,9 +570,11 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('1n1r1b1r/P1P1P1P1/2BNq1k1/7R/3Q4/1P1N2K1/P1PBP3/5R2 w - - 15 45')
+b.set_position('rnbqk1nr/ppp2ppp/8/3p3Q/1b1P1p2/2P1P3/PP3PPP/RN2KBNR b KQkq - 1 5')
 b.print()
 
 print('\n')
 
+print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
 
+print("Pinned white: ", b.pinned_moves[color.WHITE], "\n")
