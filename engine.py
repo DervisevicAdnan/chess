@@ -215,6 +215,7 @@ class Board:
         return self.valid_moves_by_color[color.BLACK] + self.valid_moves_by_color[color.WHITE]
 
     def update_valid_moves(self):
+        self.pinned_moves = { color.BLACK: [], color.WHITE: []}
         self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
         self.guarded_pieces =  {color.BLACK: set(), color.WHITE: set()}
         for i in range(8):
@@ -251,7 +252,7 @@ class Board:
 
     def check_draw(self):
         for colour in [color.WHITE, color.BLACK]:
-            if len(self.valid_moves_by_color[colour]) == 0 and not self.checkmate[colour]:
+            if len(self.valid_moves_by_color[colour]) == 0 and self.active_color_move == colour and not self.checkmate[colour]:
                 self.draw = True
         if self.half_moves == 100:
             self.draw = True
@@ -569,14 +570,15 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('rnbqk1nr/ppp2ppp/8/3pp2Q/1bPP4/4P3/PP3PPP/RN2KBNR b KQkq - 1 5')
+b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
 b.print()
 
 print('\n')
 
-print(b.valid_moves_by_color[color.WHITE], "\n")
+print(b.valid_moves_by_color[color.BLACK], "\n")
 
 print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
 
 print("Pinned white: ", b.pinned_moves[color.WHITE], "\n")
+
 
