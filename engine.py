@@ -249,6 +249,7 @@ class Board:
             self.draw = True
         if self.is_insufficient_material(self.encode_FEN()):
             self.draw = True
+        self.filter_pinned_figure_moves()
         pass
         
     def is_insufficient_material(self, FEN):
@@ -491,6 +492,30 @@ class Board:
                 if moves[-2] == x and moves[-1] == y:
                     return True
         return False
+    
+    def filter_pinned_figure_moves(self):
+        #print("-"*20)
+        #print("Pinovanje\n")
+        for clr in color:
+            #print(clr)
+            for move in self.valid_moves_by_color[clr]:
+                pinovani = [pin_field for pin_field in self.pinned_moves[clr] if pin_field[-2:] == move[:2]]
+                #print(pinovani)
+                
+                if len(pinovani) == 1:
+                    i = 0
+                    while i < len(self.valid_moves_by_color[clr]):
+                        #print("Indeks ", i)
+                        mv = self.valid_moves_by_color[clr][i]
+                        if move[:2] == mv[:2]:
+                            #print("Unutrasnja provjera za ", mv)
+                            #print([pin for pin in self.pinned_moves[clr] if mv[-2:] == pin[-2:] and pin[:2] == pinovani[0][:2]])
+                            pin_polje = any(pin for pin in self.pinned_moves[clr] if mv[-2:] == pin[-2:] and pin[:2] == pinovani[0][:2])
+                            if not (pin_polje or mv[-2:] == pinovani[0][:2]):
+                                self.valid_moves_by_color[clr].remove(mv)
+                                i -= 1
+                        i += 1
+                
 
 
 class Field:
