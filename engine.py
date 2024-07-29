@@ -250,7 +250,8 @@ class Board:
         if self.is_insufficient_material(self.encode_FEN()):
             self.draw = True
         self.filter_pinned_figure_moves()
-        pass
+        
+
         
     def is_insufficient_material(self, FEN):
         position = FEN.split()[0]
@@ -321,7 +322,7 @@ class Board:
             if y < 7 and isinstance(self.board[tmp_x][y + 1], Figure):
                 if self.board[tmp_x][y + 1].color != self.board[x][y].color:
                     if isinstance(self.board[tmp_x][y + 1], King):
-                        self.check_moves[self.board[x][y].color].append((x, y, tmp_x, y + 1))
+                        self.check_moves[self.board[tmp_x][y + 1].color].append((x, y, tmp_x, y + 1))
                     else:
                         valid.append((x, y, tmp_x, y + 1))
                 else:
@@ -329,7 +330,7 @@ class Board:
             if y > 0 and isinstance(self.board[tmp_x][y - 1], Figure):
                 if self.board[tmp_x][y - 1].color != self.board[x][y].color:
                     if isinstance(self.board[tmp_x][y - 1], King):
-                        self.check_moves[self.board[x][y].color].append((x, y, tmp_x, y - 1))
+                        self.check_moves[self.board[tmp_x][y - 1].color].append((x, y, tmp_x, y - 1))
                     else:
                         valid.append((x, y, tmp_x, y - 1))
                 else:
@@ -357,7 +358,7 @@ class Board:
                     elif isinstance(self.board[i][j], Figure):
                         if self.board[i][j].color != self.board[x][y].color:
                             if isinstance(self.board[i][j], King):
-                                self.check_moves[self.board[x][y].color].append((x, y, i, j))
+                                self.check_moves[self.board[i][j].color].append((x, y, i, j))
                                 self.pinned_moves[self.board[i][j].color].extend(pinned)
                                 break
                             else:
@@ -450,6 +451,7 @@ class Board:
             valid.append((x, y, x, y - 2))
         if self.short_castle_valid(x, y):
             valid.append((x, y, x, y + 2))
+        # ne mozemo ovdje checkmate provjeravati, bar ne ovako
         if len(valid) == 0 and self.is_check[self.board[x][y].color]:
                 self.checkmate[self.board[x][y].color] = True
         return valid
@@ -587,11 +589,15 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
+#b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
+b.set_position('rnb1kbnr/ppp2q1p/8/4Q3/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
 #b.set_position("rnbqk1nr/ppp2ppp/8/3pp2Q/1bPP4/4P3/PP3PPP/RN2KBNR b KQkq - 1 5")
 b.print()
 
 print('\n')
+
+print("Check for black?")
+print(b.is_check[color.BLACK])
 
 #b.update_valid_moves()
 print(len(b.valid_moves_by_color[color.WHITE]))
