@@ -232,7 +232,7 @@ class Board:
     def update_valid_moves(self):
         self.pinned_moves = { color.BLACK: [], color.WHITE: []}
         self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
-        self.guarded_pieces =  {color.BLACK: set(), color.WHITE: set()}
+        self.guarded_pieces = { color.BLACK: set(), color.WHITE: set()}
         for i in range(8):
             for j in range(8):
                 if isinstance(self.board[i][j], King):
@@ -250,7 +250,10 @@ class Board:
         if self.is_insufficient_material(self.encode_FEN()):
             self.draw = True
         self.filter_pinned_figure_moves()
-        
+        for col in color:
+            if self.is_check[col]:
+                self.reduce_moves_for_check(col)
+                pass
 
         
     def is_insufficient_material(self, FEN):
@@ -496,28 +499,41 @@ class Board:
         return False
     
     def filter_pinned_figure_moves(self):
-        #print("-"*20)
-        #print("Pinovanje\n")
         for clr in color:
-            #print(clr)
             for move in self.valid_moves_by_color[clr]:
+                # potezi koji pinnuju destinacijsko polje od poteza move
                 pinovani = [pin_field for pin_field in self.pinned_moves[clr] if pin_field[-2:] == move[:2]]
-                #print(pinovani)
-                
-                if len(pinovani) == 1:
+
+                if len(pinovani) > 0:
                     i = 0
                     while i < len(self.valid_moves_by_color[clr]):
-                        #print("Indeks ", i)
                         mv = self.valid_moves_by_color[clr][i]
+
+                        # trazimo poteze iste figure kao kod move
                         if move[:2] == mv[:2]:
-                            #print("Unutrasnja provjera za ", mv)
-                            #print([pin for pin in self.pinned_moves[clr] if mv[-2:] == pin[-2:] and pin[:2] == pinovani[0][:2]])
+
                             pin_polje = any(pin for pin in self.pinned_moves[clr] if mv[-2:] == pin[-2:] and pin[:2] == pinovani[0][:2])
                             if not (pin_polje or mv[-2:] == pinovani[0][:2]):
                                 self.valid_moves_by_color[clr].remove(mv)
                                 i -= 1
                         i += 1
-                
+
+    def reduce_moves_for_check(self, king_color):
+        # ako je sah sa vise strana, samo kralj se moze micati
+        # ako je sah samo sa jedne strane, ostaviti pinovane poteze
+        filtered_valid_moves = []
+        if len(self.check_moves[king_color]) == 1:
+            # ostaviti pinovane
+
+            # pinovana polja od strane iste figure, na kojima mozemo blokirati sah
+            attack_path = [mv[-2:] for mv in self.pinned_moves[king_color] if self.check_moves[king_color][0][:2] == mv[:2]]
+            for move in self.valid_moves_by_color[king_color]:
+                if move[-2:] == self.check_moves[king_color][0][:2] or move[-2:] in attack_path:
+                    filtered_valid_moves.append(move)
+
+        # ostaviti kraljeve poteze
+        filtered_valid_moves.extend([move for move in self.valid_moves_by_color[king_color] if move[:2] == self.kings_positions[king_color]])
+        self.valid_moves_by_color[king_color] = filtered_valid_moves
 
 
 class Field:
