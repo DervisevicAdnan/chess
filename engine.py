@@ -22,21 +22,6 @@ class Play:
 
 class Board:
 
-    '''
-    
-    board 
-    
-    bR bN bB bQ bK bB bN bR
-    bP bP bP bP bP bP bP bP
-
-
-
-    
-    wP wP wP wP wP wP wP wP
-    wR wN wB wQ wK wB wN wR
-
-    '''
-
     def __init__(self):
         self.kings_positions = {color.BLACK: (8, 8), color.WHITE: (8, 8)}
 
@@ -255,7 +240,6 @@ class Board:
                 self.reduce_moves_for_check(col)
                 pass
 
-        
     def is_insufficient_material(self, FEN):
         position = FEN.split()[0]
         remaining_pieces = position.replace('/', '')
@@ -608,6 +592,7 @@ b = Board()
 #b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
 b.set_position('rnb1kbnr/ppp2q1p/8/4Q3/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
 #b.set_position("rnbqk1nr/ppp2ppp/8/3pp2Q/1bPP4/4P3/PP3PPP/RN2KBNR b KQkq - 1 5")
+
 b.print()
 
 print('\n')
