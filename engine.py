@@ -217,48 +217,29 @@ class Board:
     def update_valid_moves(self):
         self.pinned_moves = { color.BLACK: [], color.WHITE: []}
         self.valid_moves_by_color = { color.BLACK: [], color.WHITE: []}
-        self.guarded_pieces =  {color.BLACK: set(), color.WHITE: set()}
+        self.guarded_pieces = { color.BLACK: set(), color.WHITE: set()}
         for i in range(8):
             for j in range(8):
                 if isinstance(self.board[i][j], King):
                     self.kings_positions[self.board[i][j].color] = (i, j)
                 elif isinstance(self.board[i][j], Figure):
                     self.valid_moves_by_color[self.board[i][j].color].extend(self.get_figure_valid_moves(i,j))
-         
-        self.remove_pin_duplicates()
-        for colour in [color.WHITE, color.BLACK]:
-            if self.is_check[colour]:
-                self.remove_valid_if_check(colour)
-            else:
-                self.remove_pinned_moves(colour)
-        
-        self.check_draw()
 
-    def remove_pin_duplicates(self):
-        for colour in [color.WHITE, color.BLACK]:
-            self.pinned_moves[colour] = list(dict.fromkeys(self.pinned_moves[colour]))
-
-    def remove_pinned_moves(self, colour):
-        pinned_positions = {(move[2], move[3]) for move in self.pinned_moves[colour]}
-        self.valid_moves_by_color[colour] = [move for move in self.valid_moves_by_color[colour]
-            if (move[0], move[1]) not in pinned_positions
-        ]
-
-    def remove_valid_if_check(self, colour):
-        pinned_positions = {(move[2], move[3]) for move in self.pinned_moves[colour]}
-        self.valid_moves_by_color[colour] = [move for move in self.valid_moves_by_color[colour]
-            if (move[2], move[3]) in pinned_positions
-        ]
-
-    def check_draw(self):
-        for colour in [color.WHITE, color.BLACK]:
-            if len(self.valid_moves_by_color[colour]) == 0 and self.active_color_move == colour and not self.checkmate[colour]:
+        self.valid_moves_by_color[color.BLACK].extend(self.get_figure_valid_moves(*self.kings_positions[color.BLACK]))
+        self.valid_moves_by_color[color.WHITE].extend(self.get_figure_valid_moves(*self.kings_positions[color.WHITE]))
+        for col in [color.WHITE, color.BLACK]:
+            if len(self.valid_moves_by_color[col]) == 0 and not self.checkmate[col]:
                 self.draw = True
         if self.half_moves == 100:
             self.draw = True
         if self.is_insufficient_material(self.encode_FEN()):
             self.draw = True
-        
+        self.filter_pinned_figure_moves()
+        for col in color:
+            if self.is_check[col]:
+                self.reduce_moves_for_check(col)
+                pass
+
     def is_insufficient_material(self, FEN):
         position = FEN.split()[0]
         remaining_pieces = position.replace('/', '')
@@ -328,7 +309,7 @@ class Board:
             if y < 7 and isinstance(self.board[tmp_x][y + 1], Figure):
                 if self.board[tmp_x][y + 1].color != self.board[x][y].color:
                     if isinstance(self.board[tmp_x][y + 1], King):
-                        self.check_moves[self.board[x][y].color].append((x, y, tmp_x, y + 1))
+                        self.check_moves[self.board[tmp_x][y + 1].color].append((x, y, tmp_x, y + 1))
                     else:
                         valid.append((x, y, tmp_x, y + 1))
                 else:
@@ -336,7 +317,7 @@ class Board:
             if y > 0 and isinstance(self.board[tmp_x][y - 1], Figure):
                 if self.board[tmp_x][y - 1].color != self.board[x][y].color:
                     if isinstance(self.board[tmp_x][y - 1], King):
-                        self.check_moves[self.board[x][y].color].append((x, y, tmp_x, y - 1))
+                        self.check_moves[self.board[tmp_x][y - 1].color].append((x, y, tmp_x, y - 1))
                     else:
                         valid.append((x, y, tmp_x, y - 1))
                 else:
@@ -364,7 +345,7 @@ class Board:
                     elif isinstance(self.board[i][j], Figure):
                         if self.board[i][j].color != self.board[x][y].color:
                             if isinstance(self.board[i][j], King):
-                                self.check_moves[self.board[x][y].color].append((x, y, i, j))
+                                self.check_moves[self.board[i][j].color].append((x, y, i, j))
                                 self.pinned_moves[self.board[i][j].color].extend(pinned)
                                 break
                             else:
@@ -457,6 +438,7 @@ class Board:
             valid.append((x, y, x, y - 2))
         if self.short_castle_valid(x, y):
             valid.append((x, y, x, y + 2))
+        # ne mozemo ovdje checkmate provjeravati, bar ne ovako
         if len(valid) == 0 and self.is_check[self.board[x][y].color]:
                 self.checkmate[self.board[x][y].color] = True
         return valid
@@ -499,6 +481,43 @@ class Board:
                 if moves[-2] == x and moves[-1] == y:
                     return True
         return False
+    
+    def filter_pinned_figure_moves(self):
+        for clr in color:
+            for move in self.valid_moves_by_color[clr]:
+                # potezi koji pinnuju destinacijsko polje od poteza move
+                pinovani = [pin_field for pin_field in self.pinned_moves[clr] if pin_field[-2:] == move[:2]]
+
+                if len(pinovani) > 0:
+                    i = 0
+                    while i < len(self.valid_moves_by_color[clr]):
+                        mv = self.valid_moves_by_color[clr][i]
+
+                        # trazimo poteze iste figure kao kod move
+                        if move[:2] == mv[:2]:
+
+                            pin_polje = any(pin for pin in self.pinned_moves[clr] if mv[-2:] == pin[-2:] and pin[:2] == pinovani[0][:2])
+                            if not (pin_polje or mv[-2:] == pinovani[0][:2]):
+                                self.valid_moves_by_color[clr].remove(mv)
+                                i -= 1
+                        i += 1
+
+    def reduce_moves_for_check(self, king_color):
+        # ako je sah sa vise strana, samo kralj se moze micati
+        # ako je sah samo sa jedne strane, ostaviti pinovane poteze
+        filtered_valid_moves = []
+        if len(self.check_moves[king_color]) == 1:
+            # ostaviti pinovane
+
+            # pinovana polja od strane iste figure, na kojima mozemo blokirati sah
+            attack_path = [mv[-2:] for mv in self.pinned_moves[king_color] if self.check_moves[king_color][0][:2] == mv[:2]]
+            for move in self.valid_moves_by_color[king_color]:
+                if move[-2:] == self.check_moves[king_color][0][:2] or move[-2:] in attack_path:
+                    filtered_valid_moves.append(move)
+
+        # ostaviti kraljeve poteze
+        filtered_valid_moves.extend([move for move in self.valid_moves_by_color[king_color] if move[:2] == self.kings_positions[king_color]])
+        self.valid_moves_by_color[king_color] = filtered_valid_moves
 
 
 class Field:
@@ -570,15 +589,23 @@ class Pawn(Figure):
         return ("w" if self.color == color.WHITE else "b") + "P"
 
 b = Board()
-b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
+#b.set_position('rnb1kbnr/ppp2q1p/8/7Q/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
+b.set_position('rnb1kbnr/ppp2q1p/8/4Q3/4P3/8/PPP2PPP/RNB1KBNR w KQkq - 0 1')
+#b.set_position("rnbqk1nr/ppp2ppp/8/3pp2Q/1bPP4/4P3/PP3PPP/RN2KBNR b KQkq - 1 5")
+
 b.print()
 
 print('\n')
 
-print(b.valid_moves_by_color[color.BLACK], "\n")
+print("Check for black?")
+print(b.is_check[color.BLACK])
+
+#b.update_valid_moves()
+print(len(b.valid_moves_by_color[color.WHITE]))
 
 print("Pinned black: ", b.pinned_moves[color.BLACK], "\n")
 
 print("Pinned white: ", b.pinned_moves[color.WHITE], "\n")
 
-
+print("potezi crni: ", b.valid_moves_by_color[color.BLACK], "\n")
+print("potezi bijeli: ", b.valid_moves_by_color[color.WHITE], "\n")
